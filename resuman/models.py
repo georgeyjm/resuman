@@ -55,7 +55,12 @@ class Resume(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    info_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])
     section_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])
+
+    @property
+    def infos(self):
+        return list(filter(lambda x: x is not None, [Info.query.get(i) for i in self.info_ids]))
 
     @property
     def sections(self):
@@ -90,14 +95,15 @@ class Entry(db.Model):
     __tablename__ = 'entries'
 
     id = db.Column(db.Integer, primary_key=True)
-    primary = db.Column(db.String(128), nullable=False, default='')
-    secondary = db.Column(db.String(128), nullable=True)
+    title = db.Column(db.String(128), nullable=False, default='')
+    subtitle = db.Column(db.String(128), nullable=True)
     section_id = db.Column(db.Integer, db.ForeignKey('sections.id'))
-    is_current = db.Column(db.Boolean, nullable=False, default=False)
     start_year = db.Column(db.Integer, nullable=False)
     start_month = db.Column(db.Integer, nullable=True)
     end_year = db.Column(db.Integer, nullable=True)
     end_month = db.Column(db.Integer, nullable=True)
+    is_ongoing = db.Column(db.Boolean, nullable=False, default=False)
+    is_expected = db.Column(db.Boolean, nullable=False, default=False)
     description_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])
 
     @property
