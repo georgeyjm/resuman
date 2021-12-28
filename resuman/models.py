@@ -33,6 +33,20 @@ class User(db.Model, UserMixin):
         return User.query.get(user_id)
 
 
+class Info(db.Model):
+    '''Model for the infos table.'''
+
+    __tablename__ = 'infos'
+
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(64), nullable=False)
+    value = db.Column(db.String(128), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+
+    def __repr__(self):
+        return f'{self.__class__.__name__}({self.id}: {self.key!r}={self.value!r})'
+
+
 class Resume(db.Model):
     '''Model for the resumes table.'''
 
@@ -40,6 +54,7 @@ class Resume(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     section_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])
 
     @property
@@ -57,6 +72,7 @@ class Section(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
+    type = db.Column(db.String(16), nullable=False, default='basic')
     resume_id = db.Column(db.Integer, db.ForeignKey('resumes.id'))
     entry_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])
 
@@ -65,7 +81,7 @@ class Section(db.Model):
         return list(filter(lambda x: x is not None, [Entry.query.get(i) for i in self.entry_ids]))
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({self.id}, name={self.name!r})'
+        return f'{self.__class__.__name__}({self.id}, name={self.name!r}, type={self.type!r})'
 
 
 class Entry(db.Model):
@@ -74,7 +90,8 @@ class Entry(db.Model):
     __tablename__ = 'entries'
 
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(128), nullable=False)
+    primary = db.Column(db.String(128), nullable=False, default='')
+    secondary = db.Column(db.String(128), nullable=True)
     section_id = db.Column(db.Integer, db.ForeignKey('sections.id'))
     is_current = db.Column(db.Boolean, nullable=False, default=False)
     start_year = db.Column(db.Integer, nullable=False)
@@ -98,8 +115,7 @@ class Description(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     entry_id = db.Column(db.Integer, db.ForeignKey('entries.id'))
-    position = db.Column(db.Integer)
-    content = db.Column(db.String(500))
+    content = db.Column(db.String(512))
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.id})'
