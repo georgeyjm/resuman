@@ -3,18 +3,14 @@ import time
 import logging
 
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_socketio import SocketIO
-from flask_caching import Cache
 from flask_cors import CORS
+# from flask_socketio import SocketIO
 
 from config import app_config
 
 
 # Initialize outside to be importable
-db = SQLAlchemy()
-socketio = SocketIO()
-cache = Cache(config={'CACHE_TYPE': 'simple'})
+# socketio = SocketIO()
 
 def create_app():
     # Initialize app and related instances
@@ -23,6 +19,7 @@ def create_app():
     # Configure app environment, defaults to development
     flask_env = os.getenv('FLASK_ENV', 'development')
     app.config.from_object(app_config.get(flask_env))
+    app.config.from_pyfile('secret.py', silent=True)
 
     # Setup logging
     # os.makedirs(app.config['LOG_DIR'], exist_ok=True)
@@ -33,20 +30,22 @@ def create_app():
     # elif flask_env == 'production':
     #     logging.basicConfig(filename=filepath, level=logging.INFO, format=f'%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
 
-    # Initialize plugin instances
-    socketio.init_app(app, cors_allowed_origins=app.config['ALLOWED_ORIGINS'])
+    # Import and initialize extension instances
+    from resuman.models import db
+    from resuman.extensions import cache, login_manager
+    db.init_app(app)
+    login_manager.init_app(app)
+    # socketio.init_app(app, cors_allowed_origins=app.config['ALLOWED_ORIGINS'])
     cache.init_app(app)
     CORS(app)
 
-    # Import views and APIs
     with app.app_context():
+        # Import views and APIs
         import resuman.views
-    #     from resuman.apis import api
-    # app.register_blueprint(api)
+        # from resuman.apis import api
+        # app.register_blueprint(api)
 
-    # Initialize database
-    db.init_app(app)
-    with app.app_context():
+        # Initialize database
         db.create_all()
 
     # @app.before_first_request
