@@ -2,8 +2,8 @@ from datetime import datetime
 
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.dialects.postgresql import ARRAY
 from werkzeug.security import check_password_hash
-from sqlalchemy.ext.orderinglist import ordering_list
 
 from resuman.extensions import login_manager
 
@@ -40,8 +40,11 @@ class Resume(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
+    section_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])
 
-    sections = db.relationship('Section', order_by='Section.position', collection_class=ordering_list('position'))
+    @property
+    def sections(self):
+        return list(filter(lambda x: x is not None, [Section.query.get(i) for i in self.section_ids]))
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.id}, name={self.name!r})'
@@ -55,9 +58,11 @@ class Section(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     resume_id = db.Column(db.Integer, db.ForeignKey('resumes.id'))
-    position = db.Column(db.Integer)
+    entry_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])
 
-    entries = db.relationship('Entry', order_by='Entry.position', collection_class=ordering_list('position'))
+    @property
+    def entries(self):
+        return list(filter(lambda x: x is not None, [Entry.query.get(i) for i in self.entry_ids]))
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.id}, name={self.name!r})'
@@ -71,14 +76,16 @@ class Entry(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     section_id = db.Column(db.Integer, db.ForeignKey('sections.id'))
-    position = db.Column(db.Integer)
     is_current = db.Column(db.Boolean, nullable=False, default=False)
     start_year = db.Column(db.Integer, nullable=False)
     start_month = db.Column(db.Integer, nullable=True)
     end_year = db.Column(db.Integer, nullable=True)
     end_month = db.Column(db.Integer, nullable=True)
+    description_ids = db.Column(ARRAY(db.Integer), nullable=False, default=[])
 
-    descriptions = db.relationship('Description', order_by='Description.position', collection_class=ordering_list('position'))
+    @property
+    def descriptions(self):
+        return list(filter(lambda x: x is not None, [Description.query.get(i) for i in self.description_ids]))
 
     def __repr__(self):
         return f'{self.__class__.__name__}({self.id}, name={self.name!r})'
