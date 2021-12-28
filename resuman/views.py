@@ -26,7 +26,6 @@ def index_page():
 
 
 @app.route('/render/<int:resume_id>')
-# @cache.cached(timeout=3600)
 def render(resume_id):
     render_resume(resume_id)
     return 'Hello'
